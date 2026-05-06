@@ -1,6 +1,6 @@
-﻿{
+{
   "name": "vsc-companion",
-  "displayName": "Codex Companion",
+  "displayName": "Code Companion",
   "description": "A personal VSCode companion for work habits, reminders, and project routines.",
   "version": "0.0.1",
   "publisher": "nikel4610",
@@ -11,35 +11,58 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:codexCompanion.view"
+    "onStartupFinished",
+    "onView:codeCompanion.view",
+    "onView:codeCompanion.panelView",
+    "onCommand:codexCompanion.open",
+    "onCommand:codexCompanion.openBottom"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "codexCompanion",
-          "title": "Codex Companion",
+          "id": "codeCompanion",
+          "title": "Code Companion",
+          "icon": "media/companion.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "codeCompanionPanel",
+          "title": "Code Companion",
           "icon": "media/companion.svg"
         }
       ]
     },
     "views": {
-      "codexCompanion": [
+      "codeCompanion": [
         {
-          "id": "codexCompanion.view",
+          "id": "codeCompanion.view",
+          "name": "Companion",
+          "type": "webview"
+        }
+      ],
+      "codeCompanionPanel": [
+        {
+          "id": "codeCompanion.panelView",
           "name": "Companion",
           "type": "webview"
         }
       ]
     },
     "configuration": {
-      "title": "Codex Companion",
+      "title": "Code Companion",
       "properties": {
         "codexCompanion.characterName": {
           "type": "string",
           "default": "Companion",
           "description": "Name displayed in the companion panel."
+        },
+        "codexCompanion.characterPath": {
+          "type": "string",
+          "default": "",
+          "description": "Workspace-relative or absolute image path displayed in the companion panel."
         },
         "codexCompanion.tone": {
           "type": "string",
@@ -52,13 +75,66 @@
           "default": 8,
           "minimum": 1,
           "description": "Show a stronger reminder when changed files exceed this number."
+        },
+        "codexCompanion.remindCommitAfterChangedFiles": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "description": "Show a commit checklist reminder when changed files reach this number."
+        },
+        "codexCompanion.remindTestAfterMinutes": {
+          "type": "number",
+          "default": 120,
+          "minimum": 1,
+          "description": "Show a test reminder when the last test run is older than this many minutes."
+        },
+        "codexCompanion.showWorkTimeAfterMinutes": {
+          "type": "number",
+          "default": 60,
+          "minimum": 1,
+          "description": "Show a work session reminder after this many minutes."
+        },
+        "codexCompanion.ambientMotion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play subtle companion idle motions in the panel."
+        },
+        "codexCompanion.commands": {
+          "type": "array",
+          "default": [],
+          "description": "Project commands displayed as buttons in the companion panel.",
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "command"
+            ],
+            "properties": {
+              "label": {
+                "type": "string",
+                "description": "Button label."
+              },
+              "command": {
+                "type": "string",
+                "description": "Shell command to run in a VSCode terminal."
+              }
+            }
+          }
         }
       }
     },
     "commands": [
       {
+        "command": "codexCompanion.open",
+        "title": "Code Companion: Open Sidebar"
+      },
+      {
+        "command": "codexCompanion.openBottom",
+        "title": "Code Companion: Open Bottom Panel"
+      },
+      {
         "command": "codexCompanion.refresh",
-        "title": "Codex Companion: Refresh"
+        "title": "Code Companion: Refresh"
       }
     ]
   },

@@ -22,29 +22,103 @@ body {
   justify-items: center;
 }
 
+.playground {
+  width: 100%;
+  min-height: 112px;
+  overflow: hidden;
+  position: relative;
+}
+
+.shell-panel {
+  gap: 0;
+  min-width: 420px;
+  min-height: calc(var(--panel-height, 100vh) - 16px);
+  padding: 8px;
+  align-content: end;
+}
+
+.shell-panel .companion {
+  grid-template-columns: minmax(280px, 1fr) minmax(180px, 22vw);
+  align-items: stretch;
+  justify-items: stretch;
+  min-height: 156px;
+  align-self: end;
+}
+
+.shell-panel .sprite {
+  position: absolute;
+  left: var(--companion-left, 8px);
+  bottom: 14px;
+  animation: none;
+  transition: left 5.4s ease-in-out;
+}
+
+.shell-panel .playground {
+  min-height: 156px;
+  border: 0;
+  background:
+    linear-gradient(transparent calc(100% - 18px), color-mix(in srgb, var(--vscode-panel-border) 24%, transparent) 0 19px, transparent 19px),
+    transparent;
+}
+
+.shell-panel .bubble,
+.shell-panel .stats,
+.shell-panel .reminders {
+  display: none;
+}
+
+.pet-hud {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 2px 0 2px 10px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  min-width: 0;
+  opacity: 0.72;
+  transition: opacity 0.16s ease;
+}
+
+.pet-hud:hover,
+.pet-hud:focus-within {
+  opacity: 1;
+}
+
+.pet-hud div:not(.commands) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pet-hud ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.commands.compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 6px;
+}
+
 .sprite {
   width: 96px;
   height: 96px;
   display: grid;
   place-items: center;
   image-rendering: pixelated;
-  background: linear-gradient(135deg, #2a7f62, #7c5cff);
-  border: 2px solid var(--vscode-panel-border);
-  box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.2);
+  background: transparent;
+  animation: companion-idle 3.8s ease-in-out infinite;
 }
 
-.face {
-  width: 52px;
-  height: 36px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.face span {
-  width: 10px;
-  height: 16px;
-  background: #101318;
+.sprite.image {
+  object-fit: contain;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .bubble {
@@ -71,6 +145,30 @@ body {
   gap: 8px;
 }
 
+.commands {
+  display: grid;
+  gap: 8px;
+}
+
+.reminders {
+  padding: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+}
+
+.reminders ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.reminders li {
+  line-height: 1.45;
+}
+
+.reminders li + li {
+  margin-top: 6px;
+}
+
 .stats div {
   display: flex;
   align-items: center;
@@ -94,4 +192,373 @@ button {
 
 button:hover {
   background: var(--vscode-button-hoverBackground);
+}
+
+.command-button {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.commands.compact button,
+.pet-hud > button {
+  padding: 5px 8px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--vscode-button-secondaryBackground) 70%, transparent);
+}
+
+.command-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.is-busy .sprite {
+  animation: companion-busy 0.72s ease-in-out infinite;
+}
+
+.is-busy .bubble {
+  border-color: var(--vscode-focusBorder);
+}
+
+.is-busy .bubble::after {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 4px;
+  margin-top: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-progressBar-background) 0 33%,
+    transparent 33% 44%,
+    var(--vscode-progressBar-background) 44% 66%,
+    transparent 66% 77%,
+    var(--vscode-progressBar-background) 77% 100%
+  );
+  animation: companion-dots 0.72s steps(3, end) infinite;
+}
+
+.sprite.is-wandering {
+  animation: companion-wander 2.6s ease-in-out 1;
+}
+
+.sprite.is-stretching {
+  animation: cat-stretch 1.8s ease-in-out 1;
+  transform-origin: center bottom;
+}
+
+.sprite.is-sitting {
+  animation: cat-sit 2.2s ease-in-out 1;
+}
+
+.sprite.is-tail-flicking .cat-tail {
+  animation: cat-tail-flick 1.4s steps(2, end) 1;
+}
+
+.sprite.is-walking .cat-leg.front {
+  animation: cat-step-front 0.64s steps(2, end) infinite;
+}
+
+.sprite.is-walking .cat-leg.back {
+  animation: cat-step-back 0.64s steps(2, end) infinite;
+}
+
+.sprite.is-walking .cat-tail {
+  animation: cat-walk-tail 0.9s ease-in-out infinite;
+}
+
+.sprite.is-napping .cat-eye,
+.sprite.is-napping .cat-mouth {
+  animation: cat-nap 2.4s steps(1, end) 1;
+}
+
+.cat {
+  position: relative;
+  width: 76px;
+  height: 54px;
+}
+
+.is-facing-left .cat {
+  transform: scaleX(-1);
+}
+
+.cat-head,
+.cat-body,
+.cat-tail,
+.cat-leg,
+.cat-ear,
+.cat-eye,
+.cat-mouth {
+  position: absolute;
+  display: block;
+  background: var(--vscode-editor-foreground);
+}
+
+.cat-body {
+  left: 20px;
+  top: 24px;
+  width: 38px;
+  height: 22px;
+  box-shadow:
+    inset 0 -4px 0 var(--vscode-descriptionForeground),
+    4px 0 0 var(--vscode-descriptionForeground);
+}
+
+.cat-head {
+  left: 10px;
+  top: 14px;
+  width: 26px;
+  height: 24px;
+  box-shadow: inset 0 -3px 0 var(--vscode-descriptionForeground);
+}
+
+.cat-ear {
+  top: 6px;
+  width: 8px;
+  height: 8px;
+}
+
+.cat-ear.left {
+  left: 10px;
+}
+
+.cat-ear.right {
+  left: 28px;
+}
+
+.cat-tail {
+  left: 56px;
+  top: 18px;
+  width: 8px;
+  height: 28px;
+  transform-origin: 4px 26px;
+  box-shadow: 8px -8px 0 var(--vscode-editor-foreground);
+}
+
+.cat-leg {
+  top: 44px;
+  width: 8px;
+  height: 8px;
+}
+
+.cat-leg.front {
+  left: 24px;
+}
+
+.cat-leg.back {
+  left: 48px;
+}
+
+.cat-eye {
+  top: 8px;
+  width: 4px;
+  height: 6px;
+  background: var(--vscode-editor-background);
+  animation: cat-blink 5.8s steps(1, end) infinite;
+}
+
+.cat-eye.left {
+  left: 6px;
+}
+
+.cat-eye.right {
+  left: 17px;
+}
+
+.cat-mouth {
+  left: 11px;
+  top: 16px;
+  width: 8px;
+  height: 3px;
+  background: var(--vscode-editor-background);
+}
+
+@keyframes companion-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes companion-wander {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0);
+  }
+
+  20% {
+    transform: translateX(-16px) translateY(-1px);
+  }
+
+  45% {
+    transform: translateX(14px) translateY(0);
+  }
+
+  70% {
+    transform: translateX(6px) translateY(-2px);
+  }
+}
+
+@keyframes cat-stretch {
+  0%,
+  100% {
+    transform: scaleY(1) translateY(0);
+  }
+
+  35% {
+    transform: scaleY(0.94) translateY(2px);
+  }
+
+  65% {
+    transform: scaleY(1.03) translateY(-2px);
+  }
+}
+
+@keyframes cat-sit {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+
+  35%,
+  70% {
+    transform: translateY(5px) scaleY(0.94);
+  }
+}
+
+@keyframes companion-busy {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+
+  75% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+@keyframes cat-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  94% {
+    transform: scaleY(0.15);
+  }
+}
+
+@keyframes cat-tail-flick {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  35% {
+    transform: rotate(12deg);
+  }
+
+  70% {
+    transform: rotate(-8deg);
+  }
+}
+
+@keyframes cat-step-front {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes cat-step-back {
+  0%,
+  100% {
+    transform: translateY(-3px);
+  }
+
+  50% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes cat-walk-tail {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes cat-nap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  12%,
+  82% {
+    transform: scaleY(0.18);
+  }
+}
+
+@keyframes companion-dots {
+  0% {
+    width: 8px;
+  }
+
+  50% {
+    width: 16px;
+  }
+
+  100% {
+    width: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite,
+  .cat-eye,
+  .is-busy .sprite,
+  .is-busy .bubble::after,
+  .sprite.is-wandering,
+  .sprite.is-walking .cat-leg.front,
+  .sprite.is-walking .cat-leg.back,
+  .sprite.is-walking .cat-tail,
+  .sprite.is-stretching {
+    animation: none;
+  }
+
+  .shell-panel .sprite {
+    transition: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .shell-panel .companion {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-hud {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+  }
+
+  .pet-hud ul,
+  .pet-hud .commands,
+  .pet-hud > button {
+    grid-column: 1 / -1;
+  }
 }
