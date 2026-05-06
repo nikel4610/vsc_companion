@@ -1,0 +1,79 @@
+﻿{
+  "name": "vsc-companion",
+  "displayName": "Codex Companion",
+  "description": "A personal VSCode companion for work habits, reminders, and project routines.",
+  "version": "0.0.1",
+  "publisher": "nikel4610",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:codexCompanion.view"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codexCompanion",
+          "title": "Codex Companion",
+          "icon": "media/companion.svg"
+        }
+      ]
+    },
+    "views": {
+      "codexCompanion": [
+        {
+          "id": "codexCompanion.view",
+          "name": "Companion",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Codex Companion",
+      "properties": {
+        "codexCompanion.characterName": {
+          "type": "string",
+          "default": "Companion",
+          "description": "Name displayed in the companion panel."
+        },
+        "codexCompanion.tone": {
+          "type": "string",
+          "enum": ["calm", "strict", "light"],
+          "default": "calm",
+          "description": "Message tone used by the companion."
+        },
+        "codexCompanion.warnDirtyFilesOver": {
+          "type": "number",
+          "default": 8,
+          "minimum": 1,
+          "description": "Show a stronger reminder when changed files exceed this number."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "codexCompanion.refresh",
+        "title": "Codex Companion: Refresh"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@typescript-eslint/parser": "^7.15.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.5.3"
+  }
+}
