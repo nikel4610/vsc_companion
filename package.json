@@ -14,8 +14,8 @@
     "onStartupFinished",
     "onView:codeCompanion.view",
     "onView:codeCompanion.panelView",
-    "onCommand:codexCompanion.open",
-    "onCommand:codexCompanion.openBottom"
+    "onCommand:codeCompanion.open",
+    "onCommand:codeCompanion.openBottom"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -54,52 +54,52 @@
     "configuration": {
       "title": "Code Companion",
       "properties": {
-        "codexCompanion.characterName": {
+        "codeCompanion.characterName": {
           "type": "string",
           "default": "Companion",
           "description": "Name displayed in the companion panel."
         },
-        "codexCompanion.characterPath": {
+        "codeCompanion.characterPath": {
           "type": "string",
           "default": "",
           "description": "Workspace-relative or absolute image path displayed in the companion panel."
         },
-        "codexCompanion.tone": {
+        "codeCompanion.tone": {
           "type": "string",
           "enum": ["calm", "strict", "light"],
           "default": "calm",
           "description": "Message tone used by the companion."
         },
-        "codexCompanion.warnDirtyFilesOver": {
+        "codeCompanion.warnDirtyFilesOver": {
           "type": "number",
           "default": 8,
           "minimum": 1,
           "description": "Show a stronger reminder when changed files exceed this number."
         },
-        "codexCompanion.remindCommitAfterChangedFiles": {
+        "codeCompanion.remindCommitAfterChangedFiles": {
           "type": "number",
           "default": 5,
           "minimum": 1,
           "description": "Show a commit checklist reminder when changed files reach this number."
         },
-        "codexCompanion.remindTestAfterMinutes": {
+        "codeCompanion.remindTestAfterMinutes": {
           "type": "number",
           "default": 120,
           "minimum": 1,
           "description": "Show a test reminder when the last test run is older than this many minutes."
         },
-        "codexCompanion.showWorkTimeAfterMinutes": {
+        "codeCompanion.showWorkTimeAfterMinutes": {
           "type": "number",
           "default": 60,
           "minimum": 1,
           "description": "Show a work session reminder after this many minutes."
         },
-        "codexCompanion.ambientMotion": {
+        "codeCompanion.ambientMotion": {
           "type": "boolean",
           "default": true,
           "description": "Play subtle companion idle motions in the panel."
         },
-        "codexCompanion.commands": {
+        "codeCompanion.commands": {
           "type": "array",
           "default": [],
           "description": "Project commands displayed as buttons in the companion panel.",
@@ -125,15 +125,15 @@
     },
     "commands": [
       {
-        "command": "codexCompanion.open",
+        "command": "codeCompanion.open",
         "title": "Code Companion: Open Sidebar"
       },
       {
-        "command": "codexCompanion.openBottom",
+        "command": "codeCompanion.openBottom",
         "title": "Code Companion: Open Bottom Panel"
       },
       {
-        "command": "codexCompanion.refresh",
+        "command": "codeCompanion.refresh",
         "title": "Code Companion: Refresh"
       }
     ]

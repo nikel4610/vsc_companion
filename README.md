@@ -13,15 +13,67 @@ A personal VSCode companion extension for work habits, reminders, and project ro
 
 ## Settings
 
-- `codexCompanion.characterName`: companion display name
-- `codexCompanion.characterPath`: workspace-relative or absolute image path
-- `codexCompanion.tone`: `calm`, `strict`, or `light`
-- `codexCompanion.warnDirtyFilesOver`: changed file warning threshold
-- `codexCompanion.remindCommitAfterChangedFiles`: commit checklist reminder threshold
-- `codexCompanion.remindTestAfterMinutes`: test reminder threshold in minutes
-- `codexCompanion.showWorkTimeAfterMinutes`: work session reminder threshold in minutes
-- `codexCompanion.ambientMotion`: subtle idle motions in the companion panel
-- `codexCompanion.commands`: command buttons shown in the Webview
+- `codeCompanion.characterName`: companion display name
+- `codeCompanion.characterPath`: workspace-relative or absolute image path
+- `codeCompanion.tone`: `calm`, `strict`, or `light`
+- `codeCompanion.warnDirtyFilesOver`: changed file warning threshold
+- `codeCompanion.remindCommitAfterChangedFiles`: commit checklist reminder threshold
+- `codeCompanion.remindTestAfterMinutes`: test reminder threshold in minutes
+- `codeCompanion.showWorkTimeAfterMinutes`: work session reminder threshold in minutes
+- `codeCompanion.ambientMotion`: subtle idle motions in the companion panel
+- `codeCompanion.commands`: command buttons shown in the Webview
+
+## Character spritesheet
+
+Create `.code-companion/character.json` in the workspace to use a PNG spritesheet instead of the default CSS character. The `spritesheet` path is resolved relative to `.code-companion/character.json`.
+
+Recommended layout:
+
+- PNG with transparent background
+- Total size: `576x480`
+- Grid: 6 columns by 5 rows
+- Frame size: `96x96`
+- No visible grid lines, text, shadows, or background color
+- Keep ears, tail, feet, and every outline fully inside each `96x96` frame
+- Keep the same foot baseline for standing frames
+- Keep the character centered consistently across frames
+- Draw the default character facing right; the extension flips it for left movement
+
+Rows:
+
+- Row 0: `idle`, 6 frames
+- Row 1: `walk`, 6 frames
+- Row 2: `sit`, 6 frames
+- Row 3: `sleep`, 6 frames
+- Row 4: `busy`, 6 frames
+
+Expected files:
+
+```text
+.code-companion/
+  character.json
+  assets/
+    companion-new.png
+```
+
+```json
+{
+  "name": "My Cat",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "scale": 1,
+  "spritesheet": "assets/companion-new.png",
+  "animations": {
+    "idle": { "row": 0, "frames": 6, "fps": 3 },
+    "walk": { "row": 1, "frames": 6, "fps": 3 },
+    "sit": { "row": 2, "frames": 6, "fps": 2 },
+    "sleep": { "row": 3, "frames": 6, "fps": 2 },
+    "busy": { "row": 4, "frames": 6, "fps": 5 }
+  }
+}
+```
+
+For smoother animation, the `walk` row should show a clear right-facing walk cycle with stable foot contact points. If the character appears to slide or walk backward, regenerate or reorder the walk frames before tuning movement speed in code.
 
 ## Development
 

@@ -8,6 +8,7 @@ type CompanionState = {
   message: string;
   reminders: string[];
   commands: CompanionCommand[];
+  character?: CompanionCharacter;
 };
 
 type CompanionCommand = {
@@ -17,6 +18,22 @@ type CompanionCommand = {
 
 type CompanionTone = 'calm' | 'strict' | 'light';
 type CompanionPlacement = 'sidebar' | 'panel';
+type CompanionAnimationName = 'idle' | 'walk' | 'sit' | 'sleep' | 'busy';
+
+type CompanionAnimation = {
+  row: number;
+  frames: number;
+  fps: number;
+};
+
+type CompanionCharacter = {
+  name?: string;
+  spritesheetUri: string;
+  frameWidth: number;
+  frameHeight: number;
+  scale: number;
+  animations: Partial<Record<CompanionAnimationName, CompanionAnimation>>;
+};
 
 export function activate(context: vscode.ExtensionContext): void {
   const sidebarProvider = new CompanionViewProvider(context, 'sidebar');
@@ -25,9 +42,9 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(CompanionViewProvider.sidebarViewType, sidebarProvider),
     vscode.window.registerWebviewViewProvider(CompanionViewProvider.panelViewType, panelProvider),
-    vscode.commands.registerCommand('codexCompanion.open', () => sidebarProvider.open()),
-    vscode.commands.registerCommand('codexCompanion.openBottom', () => panelProvider.open()),
-    vscode.commands.registerCommand('codexCompanion.refresh', () => {
+    vscode.commands.registerCommand('codeCompanion.open', () => sidebarProvider.open()),
+    vscode.commands.registerCommand('codeCompanion.openBottom', () => panelProvider.open()),
+    vscode.commands.registerCommand('codeCompanion.refresh', () => {
       sidebarProvider.refresh();
       panelProvider.refresh();
     }),
@@ -94,7 +111,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async getState(): Promise<CompanionState> {
-    const config = vscode.workspace.getConfiguration('codexCompanion');
+    const config = vscode.workspace.getConfiguration('codeCompanion');
     const changedFiles = await this.getGitChangedFiles();
     const warnDirtyFilesOver = config.get<number>('warnDirtyFilesOver', 8);
     const remindCommitAfterChangedFiles = config.get<number>('remindCommitAfterChangedFiles', 5);
@@ -104,6 +121,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     const sessionMinutes = Math.floor((Date.now() - this.startedAt) / 60000);
     const lastTestAt = this.context.globalState.get<number>('lastTestAt');
     const lastTestMinutes = lastTestAt ? Math.floor((Date.now() - lastTestAt) / 60000) : undefined;
+    const character = await this.loadCharacterConfig();
     const commands = config.get<CompanionCommand[]>('commands', []).filter((command) => {
       return command.label.trim().length > 0 && command.command.trim().length > 0;
     });
@@ -123,15 +141,16 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
       isBusy: Date.now() < this.busyUntil,
       message: this.getMessage(changedFiles, warnDirtyFilesOver, tone),
       reminders,
-      commands
+      commands,
+      character
     };
   }
 
   private render(webview: vscode.Webview, state: CompanionState): string {
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.css'));
     const nonce = crypto.randomUUID();
-    const config = vscode.workspace.getConfiguration('codexCompanion');
-    const characterName = config.get<string>('characterName', 'Companion');
+    const config = vscode.workspace.getConfiguration('codeCompanion');
+    const characterName = state.character?.name ?? config.get<string>('characterName', 'Companion');
     const characterUri = this.getCharacterUri(webview, config.get<string>('characterPath', ''));
     const ambientMotion = config.get<boolean>('ambientMotion', true);
     const commandButtons = state.commands.map((command) => {
@@ -144,7 +163,9 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     const lastTestLabel = state.lastTestMinutes === undefined
       ? 'No record'
       : `${state.lastTestMinutes} min ago`;
-    const sprite = characterUri
+    const sprite = state.character
+      ? this.renderSpriteSheet(state.character)
+      : characterUri
       ? `<img class="sprite image" data-sprite src="${characterUri}" alt="" />`
       : `<div class="sprite" data-sprite aria-hidden="true">
           <div class="cat">
@@ -201,7 +222,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';" />
   <link rel="stylesheet" href="${styleUri}" />
   <title>Code Companion</title>
 </head>
@@ -230,7 +251,29 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     const motions = placement === 'panel'
       ? ['is-sitting', 'is-stretching', 'is-tail-flicking', 'is-napping']
       : ['is-wandering', 'is-sitting', 'is-stretching', 'is-tail-flicking'];
-    const clearMotions = () => sprite?.classList.remove(...motions);
+    const spriteAnimations = {
+      idle: ${this.getAnimationScriptValue(state.character, state.character?.animations.idle)},
+      walk: ${this.getAnimationScriptValue(state.character, state.character?.animations.walk)},
+      sit: ${this.getAnimationScriptValue(state.character, state.character?.animations.sit)},
+      sleep: ${this.getAnimationScriptValue(state.character, state.character?.animations.sleep)},
+      busy: ${this.getAnimationScriptValue(state.character, state.character?.animations.busy)}
+    };
+    const setSpriteAnimation = (name) => {
+      if (!sprite?.classList.contains('sheet') || !spriteAnimations[name]) {
+        return;
+      }
+
+      const animation = spriteAnimations[name];
+      sprite.style.setProperty('--sprite-row', animation.row);
+      sprite.style.setProperty('--sprite-frames', animation.frames);
+      sprite.style.setProperty('--sprite-duration', animation.duration + 'ms');
+      sprite.style.setProperty('--sprite-y', animation.y + 'px');
+      sprite.style.setProperty('--sprite-x-end', animation.xEnd + 'px');
+    };
+    const clearMotions = () => {
+      sprite?.classList.remove(...motions);
+      setSpriteAnimation('idle');
+    };
     let companionLeft = 8;
     let companionDirection = 1;
     let playgroundWidth = 420;
@@ -259,24 +302,31 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
 
       updatePlaygroundSize();
       const maxLeft = Math.max(0, playgroundWidth - sprite.clientWidth - 16);
-      const step = Math.max(70, Math.min(260, Math.round(playgroundWidth * (0.18 + Math.random() * 0.2))));
+      const step = Math.max(36, Math.min(120, Math.round(playgroundWidth * (0.1 + Math.random() * 0.12))));
+      const previousLeft = companionLeft;
       let nextLeft = companionLeft + (step * companionDirection);
 
       if (nextLeft >= maxLeft) {
         nextLeft = maxLeft;
-        companionDirection = -1;
       } else if (nextLeft <= 0) {
         nextLeft = 0;
+      }
+
+      companionLeft = Math.round(nextLeft);
+      const movementDirection = companionLeft < previousLeft ? -1 : 1;
+      if (nextLeft >= maxLeft) {
+        companionDirection = -1;
+      } else if (nextLeft <= 0) {
         companionDirection = 1;
       } else if (Math.random() < 0.28) {
         companionDirection *= -1;
       }
 
-      companionLeft = Math.round(nextLeft);
+      setSpriteAnimation('walk');
       sprite.classList.add('is-walking');
-      sprite.classList.toggle('is-facing-left', companionDirection < 0);
+      sprite.classList.toggle('is-facing-left', movementDirection < 0);
       sprite.style.setProperty('--companion-left', companionLeft + 'px');
-      window.setTimeout(() => sprite.classList.remove('is-walking'), 5400);
+      window.setTimeout(() => sprite.classList.remove('is-walking'), 8200);
     };
     const playAmbientMotion = () => {
       if (!ambientMotion || !sprite || shell.classList.contains('is-busy')) {
@@ -290,11 +340,20 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
       }
 
       const motion = motions[Math.floor(Math.random() * motions.length)];
+      if (motion === 'is-sitting') {
+        setSpriteAnimation('sit');
+      } else if (motion === 'is-napping') {
+        setSpriteAnimation('sleep');
+      } else {
+        setSpriteAnimation('idle');
+      }
       sprite.classList.add(motion);
       window.setTimeout(clearMotions, 2600);
     };
 
     if (ambientMotion) {
+      setSpriteAnimation('idle');
+
       if (placement === 'panel') {
         sprite?.style.setProperty('--companion-left', companionLeft + 'px');
         updatePlaygroundSize();
@@ -310,12 +369,14 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
 
     document.getElementById('refresh-button').addEventListener('click', () => {
       clearMotions();
+      setSpriteAnimation('busy');
       setBusy();
       vscode.postMessage({ type: 'refresh' });
     });
     document.querySelectorAll('[data-command]').forEach((button) => {
       button.addEventListener('click', () => {
         clearMotions();
+        setSpriteAnimation('busy');
         setBusy();
         vscode.postMessage({ type: 'runCommand', command: button.dataset.command });
       });
@@ -323,6 +384,42 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
   </script>
 </body>
 </html>`;
+  }
+
+  private renderSpriteSheet(character: CompanionCharacter): string {
+    const idle = character.animations.idle ?? { row: 0, frames: 1, fps: 1 };
+    const width = character.frameWidth * character.scale;
+    const height = character.frameHeight * character.scale;
+    const duration = Math.round(1000 / idle.fps * idle.frames);
+    const style = [
+      `--sprite-image: url('${escapeCssUrl(character.spritesheetUri)}')`,
+      `--sprite-frame-width: ${character.frameWidth}px`,
+      `--sprite-frame-height: ${character.frameHeight}px`,
+      `--sprite-scale: ${character.scale}`,
+      `--sprite-width: ${width}px`,
+      `--sprite-height: ${height}px`,
+      `--sprite-row: ${idle.row}`,
+      `--sprite-y: ${idle.row * character.frameHeight * -1}px`,
+      `--sprite-frames: ${idle.frames}`,
+      `--sprite-x-end: ${idle.frames * character.frameWidth * -1}px`,
+      `--sprite-duration: ${duration}ms`
+    ].join('; ');
+
+    return `<div class="sprite sheet" data-sprite style="${style}" aria-hidden="true"><span class="sprite-sheet-frame"></span></div>`;
+  }
+
+  private getAnimationScriptValue(character?: CompanionCharacter, animation?: CompanionAnimation): string {
+    if (!character || !animation) {
+      return 'undefined';
+    }
+
+    return JSON.stringify({
+      row: animation.row,
+      frames: animation.frames,
+      duration: Math.round(1000 / animation.fps * animation.frames),
+      y: animation.row * character.frameHeight * -1,
+      xEnd: animation.frames * character.frameWidth * -1
+    });
   }
 
   private getMessage(changedFiles: number, warnDirtyFilesOver: number, tone: CompanionTone): string {
@@ -421,6 +518,86 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     return resourceUri ? webview.asWebviewUri(resourceUri).toString() : undefined;
   }
 
+  private async loadCharacterConfig(): Promise<CompanionCharacter | undefined> {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const configUris = [
+      ...(workspaceFolder ? [vscode.Uri.joinPath(workspaceFolder.uri, '.code-companion', 'character.json')] : []),
+      vscode.Uri.joinPath(this.context.extensionUri, '.code-companion', 'character.json')
+    ];
+
+    for (const configUri of configUris) {
+      try {
+        const rawConfig = await vscode.workspace.fs.readFile(configUri);
+        const parsedConfig = JSON.parse(Buffer.from(rawConfig).toString('utf8')) as unknown;
+
+        return this.parseCharacterConfig(parsedConfig, configUri);
+      } catch {
+        continue;
+      }
+    }
+
+    return undefined;
+  }
+
+  private parseCharacterConfig(value: unknown, configUri: vscode.Uri): CompanionCharacter | undefined {
+    if (!isRecord(value)) {
+      return undefined;
+    }
+
+    const frameWidth = positiveNumber(value.frameWidth);
+    const frameHeight = positiveNumber(value.frameHeight);
+    const scale = positiveNumber(value.scale) ?? 1;
+    const spritesheet = typeof value.spritesheet === 'string' ? value.spritesheet.trim() : '';
+
+    if (!frameWidth || !frameHeight || !spritesheet) {
+      return undefined;
+    }
+
+    return {
+      name: typeof value.name === 'string' && value.name.trim() ? value.name.trim() : undefined,
+      spritesheetUri: this.resolveCharacterResourceUri(configUri, spritesheet),
+      frameWidth,
+      frameHeight,
+      scale,
+      animations: this.parseAnimations(value.animations)
+    };
+  }
+
+  private parseAnimations(value: unknown): Partial<Record<CompanionAnimationName, CompanionAnimation>> {
+    const animations: Partial<Record<CompanionAnimationName, CompanionAnimation>> = {};
+
+    if (!isRecord(value)) {
+      return animations;
+    }
+
+    for (const name of ['idle', 'walk', 'sit', 'sleep', 'busy'] as const) {
+      const animation = value[name];
+
+      if (!isRecord(animation)) {
+        continue;
+      }
+
+      const row = nonNegativeNumber(animation.row);
+      const frames = positiveNumber(animation.frames);
+      const fps = positiveNumber(animation.fps);
+
+      if (row !== undefined && frames && fps) {
+        animations[name] = { row, frames, fps };
+      }
+    }
+
+    return animations;
+  }
+
+  private resolveCharacterResourceUri(configUri: vscode.Uri, resourcePath: string): string {
+    const isAbsolutePath = /^[a-zA-Z]:[\\/]/.test(resourcePath) || resourcePath.startsWith('/');
+    const resourceUri = isAbsolutePath
+      ? vscode.Uri.file(resourcePath)
+      : vscode.Uri.joinPath(vscode.Uri.joinPath(configUri, '..'), resourcePath);
+
+    return this.view?.webview.asWebviewUri(resourceUri).toString() ?? resourceUri.toString();
+  }
+
   private runCommand(command: string): void {
     if (/\btest\b/i.test(command)) {
       this.context.globalState.update('lastTestAt', Date.now());
@@ -441,4 +618,20 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function positiveNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+function nonNegativeNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+function escapeCssUrl(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }

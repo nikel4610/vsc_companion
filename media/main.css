@@ -50,7 +50,7 @@ body {
   left: var(--companion-left, 8px);
   bottom: 14px;
   animation: none;
-  transition: left 5.4s ease-in-out;
+  transition: left 8.2s linear;
 }
 
 .shell-panel .playground {
@@ -119,6 +119,39 @@ body {
   background: transparent;
   border: 0;
   box-shadow: none;
+}
+
+.sprite.sheet {
+  width: var(--sprite-width);
+  height: var(--sprite-height);
+  display: block;
+  overflow: hidden;
+  animation: none;
+}
+
+.sprite-sheet-frame {
+  display: block;
+  width: var(--sprite-frame-width);
+  height: var(--sprite-frame-height);
+  background-image: var(--sprite-image);
+  background-repeat: no-repeat;
+  background-position-y: var(--sprite-y);
+  image-rendering: pixelated;
+  transform: scale(var(--sprite-scale));
+  transform-origin: left top;
+  animation: sprite-sheet-frames var(--sprite-duration) steps(var(--sprite-frames)) infinite;
+}
+
+.sprite.sheet.is-facing-left .sprite-sheet-frame {
+  transform: scaleX(-1) scale(var(--sprite-scale));
+  transform-origin: center;
+}
+
+.sprite.sheet.is-sitting,
+.sprite.sheet.is-stretching,
+.sprite.sheet.is-napping,
+.is-busy .sprite.sheet {
+  animation: none;
 }
 
 .bubble {
@@ -528,8 +561,19 @@ button:hover {
   }
 }
 
+@keyframes sprite-sheet-frames {
+  from {
+    background-position-x: 0;
+  }
+
+  to {
+    background-position-x: var(--sprite-x-end);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sprite,
+  .sprite-sheet-frame,
   .cat-eye,
   .is-busy .sprite,
   .is-busy .bubble::after,
