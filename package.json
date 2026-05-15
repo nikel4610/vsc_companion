@@ -15,7 +15,9 @@
     "onView:codeCompanion.view",
     "onView:codeCompanion.panelView",
     "onCommand:codeCompanion.open",
-    "onCommand:codeCompanion.openBottom"
+    "onCommand:codeCompanion.openBottom",
+    "onCommand:codeCompanion.createConfig",
+    "onCommand:codeCompanion.openConfigFolder"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -135,6 +137,14 @@
       {
         "command": "codeCompanion.refresh",
         "title": "Code Companion: Refresh"
+      },
+      {
+        "command": "codeCompanion.createConfig",
+        "title": "Code Companion: Create Config"
+      },
+      {
+        "command": "codeCompanion.openConfigFolder",
+        "title": "Code Companion: Open Config Folder"
       }
     ]
   },

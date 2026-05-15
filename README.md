@@ -25,7 +25,13 @@ A personal VSCode companion extension for work habits, reminders, and project ro
 
 ## Character spritesheet
 
-Create `.code-companion/character.json` in the workspace to use a PNG spritesheet instead of the default CSS character. The `spritesheet` path is resolved relative to `.code-companion/character.json`.
+Run `Code Companion: Create Config` from the Command Palette to create the workspace config folder. It creates `.code-companion/character.json` and `.code-companion/assets/` without overwriting an existing config file.
+
+Run `Code Companion: Open Config Folder` to open the image folder directly.
+
+The Webview also includes a `Config` button that opens `.code-companion/assets/`.
+
+The `spritesheet` and `background` paths are resolved relative to `.code-companion/character.json`.
 
 Recommended layout:
 
@@ -77,7 +83,7 @@ Expected files:
 
 For smoother animation, the `walk` row should show a clear right-facing walk cycle with stable foot contact points. If the character appears to slide or walk backward, regenerate or reorder the walk frames before tuning movement speed in code.
 
-The `background` field is optional. If omitted or invalid, the playground keeps the default transparent floor.
+The `background` field is optional. If omitted or invalid, the playground keeps the default transparent floor. Background images are shown only in the bottom Panel view; the sidebar keeps a compact character-only view.
 
 ## Development
 

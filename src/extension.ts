@@ -49,6 +49,12 @@ export function activate(context: vscode.ExtensionContext): void {
       sidebarProvider.refresh();
       panelProvider.refresh();
     }),
+    vscode.commands.registerCommand('codeCompanion.createConfig', async () => {
+      await createCompanionConfig(context);
+      sidebarProvider.refresh();
+      panelProvider.refresh();
+    }),
+    vscode.commands.registerCommand('codeCompanion.openConfigFolder', () => openCompanionConfigFolder(context)),
     vscode.workspace.onDidSaveTextDocument(() => {
       sidebarProvider.refresh();
       panelProvider.refresh();
@@ -91,6 +97,11 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
 
       if (message.type === 'runCommand' && message.command) {
         this.runCommand(message.command);
+        return;
+      }
+
+      if (message.type === 'openConfigFolder') {
+        openCompanionConfigFolder(this.context);
       }
     });
   }
@@ -196,6 +207,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
           ${reminderItems ? `<ul>${reminderItems}</ul>` : ''}
           ${commandButtons ? `<div class="commands compact">${commandButtons}</div>` : ''}
           <button id="refresh-button">Refresh</button>
+          <button id="config-folder-button">Config</button>
         </aside>`
       : '';
     const sidebarInfo = this.placement === 'sidebar'
@@ -219,7 +231,8 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
         </section>
         ${reminderItems ? `<section class="reminders" aria-label="Reminders"><ul>${reminderItems}</ul></section>` : ''}
         ${commandButtons ? `<section class="commands" aria-label="Project commands">${commandButtons}</section>` : ''}
-        <button id="refresh-button">Refresh</button>`
+        <button id="refresh-button">Refresh</button>
+        <button id="config-folder-button">Config</button>`
       : '';
 
     return `<!DOCTYPE html>
@@ -377,6 +390,9 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
       setSpriteAnimation('busy');
       setBusy();
       vscode.postMessage({ type: 'refresh' });
+    });
+    document.getElementById('config-folder-button')?.addEventListener('click', () => {
+      vscode.postMessage({ type: 'openConfigFolder' });
     });
     document.querySelectorAll('[data-command]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -641,4 +657,96 @@ function nonNegativeNumber(value: unknown): number | undefined {
 
 function escapeCssUrl(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+async function createCompanionConfig(context: vscode.ExtensionContext): Promise<void> {
+  const configRoot = getConfigRoot(context);
+
+  if (!configRoot) {
+    vscode.window.showWarningMessage('Open a workspace folder before creating Code Companion config.');
+    return;
+  }
+
+  const configDir = vscode.Uri.joinPath(configRoot, '.code-companion');
+  const assetsDir = vscode.Uri.joinPath(configDir, 'assets');
+  const configUri = vscode.Uri.joinPath(configDir, 'character.json');
+  const keepUri = vscode.Uri.joinPath(assetsDir, '.gitkeep');
+
+  await vscode.workspace.fs.createDirectory(assetsDir);
+
+  if (!(await fileExists(configUri))) {
+    await vscode.workspace.fs.writeFile(configUri, Buffer.from(defaultCharacterConfig(), 'utf8'));
+  }
+
+  if (!(await fileExists(keepUri))) {
+    await vscode.workspace.fs.writeFile(keepUri, Buffer.from('', 'utf8'));
+  }
+
+  await vscode.window.showTextDocument(configUri);
+  vscode.window.showInformationMessage('Code Companion config is ready. Put spritesheet and background images in .code-companion/assets.');
+}
+
+async function openCompanionConfigFolder(context: vscode.ExtensionContext): Promise<void> {
+  const assetsDir = await ensureCompanionAssetsDir(context);
+
+  if (!assetsDir) {
+    return;
+  }
+
+  await vscode.commands.executeCommand('workbench.files.action.focusFilesExplorer');
+  await vscode.commands.executeCommand('revealInExplorer', assetsDir);
+}
+
+async function ensureCompanionAssetsDir(context: vscode.ExtensionContext): Promise<vscode.Uri | undefined> {
+  const configRoot = getConfigRoot(context);
+
+  if (!configRoot) {
+    vscode.window.showWarningMessage('Open a workspace folder before opening Code Companion config.');
+    return undefined;
+  }
+
+  const assetsDir = vscode.Uri.joinPath(configRoot, '.code-companion', 'assets');
+  await vscode.workspace.fs.createDirectory(assetsDir);
+  return assetsDir;
+}
+
+function getConfigRoot(context: vscode.ExtensionContext): vscode.Uri | undefined {
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+  if (workspaceFolder) {
+    return workspaceFolder.uri;
+  }
+
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    return context.extensionUri;
+  }
+
+  return undefined;
+}
+
+async function fileExists(uri: vscode.Uri): Promise<boolean> {
+  try {
+    await vscode.workspace.fs.stat(uri);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function defaultCharacterConfig(): string {
+  return `${JSON.stringify({
+    name: 'My Cat',
+    frameWidth: 96,
+    frameHeight: 96,
+    scale: 1,
+    spritesheet: 'assets/companion.png',
+    background: 'assets/background.png',
+    animations: {
+      idle: { row: 0, frames: 6, fps: 3 },
+      walk: { row: 1, frames: 6, fps: 3 },
+      sit: { row: 2, frames: 6, fps: 2 },
+      sleep: { row: 3, frames: 6, fps: 2 },
+      busy: { row: 4, frames: 6, fps: 5 }
+    }
+  }, null, 2)}\n`;
 }
