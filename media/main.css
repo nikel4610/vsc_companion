@@ -29,6 +29,13 @@ body {
   position: relative;
 }
 
+.playground.has-background {
+  background-image: var(--playground-background);
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: cover;
+}
+
 .shell-panel {
   gap: 0;
   min-width: 420px;
@@ -59,6 +66,12 @@ body {
   background:
     linear-gradient(transparent calc(100% - 18px), color-mix(in srgb, var(--vscode-panel-border) 24%, transparent) 0 19px, transparent 19px),
     transparent;
+}
+
+.shell-panel .playground.has-background {
+  background:
+    linear-gradient(transparent calc(100% - 18px), color-mix(in srgb, var(--vscode-panel-border) 24%, transparent) 0 19px, transparent 19px),
+    var(--playground-background) center bottom / cover no-repeat;
 }
 
 .shell-panel .bubble,

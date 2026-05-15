@@ -54,6 +54,7 @@ Expected files:
   character.json
   assets/
     companion-new.png
+    background.png
 ```
 
 ```json
@@ -63,6 +64,7 @@ Expected files:
   "frameHeight": 96,
   "scale": 1,
   "spritesheet": "assets/companion-new.png",
+  "background": "assets/background.png",
   "animations": {
     "idle": { "row": 0, "frames": 6, "fps": 3 },
     "walk": { "row": 1, "frames": 6, "fps": 3 },
@@ -74,6 +76,8 @@ Expected files:
 ```
 
 For smoother animation, the `walk` row should show a clear right-facing walk cycle with stable foot contact points. If the character appears to slide or walk backward, regenerate or reorder the walk frames before tuning movement speed in code.
+
+The `background` field is optional. If omitted or invalid, the playground keeps the default transparent floor.
 
 ## Development
 

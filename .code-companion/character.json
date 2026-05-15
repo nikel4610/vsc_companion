@@ -4,6 +4,7 @@
   "frameHeight": 96,
   "scale": 1,
   "spritesheet": "assets/companion-new.png",
+  "background": "assets/background.png",
   "animations": {
     "idle": { "row": 0, "frames": 6, "fps": 3 },
     "walk": { "row": 1, "frames": 6, "fps": 3 },

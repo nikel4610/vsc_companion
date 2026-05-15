@@ -29,6 +29,7 @@ type CompanionAnimation = {
 type CompanionCharacter = {
   name?: string;
   spritesheetUri: string;
+  backgroundUri?: string;
   frameWidth: number;
   frameHeight: number;
   scale: number;
@@ -163,6 +164,10 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     const lastTestLabel = state.lastTestMinutes === undefined
       ? 'No record'
       : `${state.lastTestMinutes} min ago`;
+    const backgroundUri = this.placement === 'panel' ? state.character?.backgroundUri : undefined;
+    const playgroundStyle = backgroundUri
+      ? ` style="--playground-background: url('${escapeCssUrl(backgroundUri)}')"`
+      : '';
     const sprite = state.character
       ? this.renderSpriteSheet(state.character)
       : characterUri
@@ -229,7 +234,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
 <body>
   <main class="shell shell-${this.placement}${state.isBusy ? ' is-busy' : ''}">
     <section class="companion" aria-label="Code Companion">
-      <div class="playground">
+      <div class="playground${backgroundUri ? ' has-background' : ''}"${playgroundStyle}>
         ${sprite}
       </div>
       ${panelHud}
@@ -548,6 +553,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     const frameHeight = positiveNumber(value.frameHeight);
     const scale = positiveNumber(value.scale) ?? 1;
     const spritesheet = typeof value.spritesheet === 'string' ? value.spritesheet.trim() : '';
+    const background = typeof value.background === 'string' ? value.background.trim() : '';
 
     if (!frameWidth || !frameHeight || !spritesheet) {
       return undefined;
@@ -556,6 +562,7 @@ class CompanionViewProvider implements vscode.WebviewViewProvider {
     return {
       name: typeof value.name === 'string' && value.name.trim() ? value.name.trim() : undefined,
       spritesheetUri: this.resolveCharacterResourceUri(configUri, spritesheet),
+      backgroundUri: background ? this.resolveCharacterResourceUri(configUri, background) : undefined,
       frameWidth,
       frameHeight,
       scale,
